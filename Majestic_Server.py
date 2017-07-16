@@ -7,22 +7,26 @@ class ClientInfo:
     alias
     room
 
-    def getAddress():
-        return address
+    def __init__(self, clientAddress):
 
-    def getAlias():
-        return alias
 
-    def getRoom():
-        return room
+    def getAddress(self):
+        return self.address
 
-    def setAlias(newAlias):
+    def getAlias(self):
+        return self.alias
+
+    def getRoom(self):
+        return self.room
+
+    def setAlias(self, newAlias):
         self.alias = newAlias # Is this how Python works?
         pass
 
-    def setRoom(newRoom):
+    def setRoom(self, newRoom):
         self.room = newRoom # I really hope this actually works
         pass
+
 
 class Room:
     users
@@ -30,19 +34,51 @@ class Room:
     name
     creator
 
-    def addUser(userAlias):
+    def __init__(self, roomName, roomCreator):
+        self.name = roomName
+        self.creator = roomCreator
 
-    def getUsers():
+    def addUser(self, userAlias):
+
+    def getUsers(self):
         return users
 
-    def getBlockedUsers():
+    def getBlockedUsers(self):
         return blockedUsers
 
-    def getRoomName():
+    def getRoomName(self):
         return name
 
-    def getCreator():
+    def getCreator(self):
         return creator
+
+
+class textHandler:
+    def interpretMessage(self):
+        pass
+    def sendMessage(self, msg, currRoom):
+        pass
+    def joinChat(self, room, user):
+        pass
+    def setAlias(self, newAlias, user):
+        pass
+    def blockUser(self, blockingUser, blockedUser):
+        pass
+    def unblockUser(self, unblockingUser, unblockedUser):
+        pass
+    def createRoom(self, creatingUser, roomName):
+        pass
+    def deleteRoom(self, deletingUser, roomName):
+        pass
+    def halp(self):
+        pass
+
+class RequestHandler:
+    ClientList
+    RoomList
+
+    def handleRequest(self):
+        pass
 
 def add_users(soket_obj, user_list):
     while(1):

@@ -2,6 +2,48 @@ import socket
 import thread
 import select
 
+class ClientInfo:
+    address
+    alias
+    room
+
+    def getAddress():
+        return address
+
+    def getAlias():
+        return alias
+
+    def getRoom():
+        return room
+
+    def setAlias(newAlias):
+        self.alias = newAlias # Is this how Python works?
+        pass
+
+    def setRoom(newRoom):
+        self.room = newRoom # I really hope this actually works
+        pass
+
+class Room:
+    users
+    blockedUsers
+    name
+    creator
+
+    def addUser(userAlias):
+
+    def getUsers():
+        return users
+
+    def getBlockedUsers():
+        return blockedUsers
+
+    def getRoomName():
+        return name
+
+    def getCreator():
+        return creator
+
 def add_users(soket_obj, user_list):
     while(1):
         client, addr = server_socket.accept()

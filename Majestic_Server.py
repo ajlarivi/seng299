@@ -4,10 +4,10 @@ import select
 
 class ClientInfo:
 
-    def __init__(self, clientAddress):
+    def __init__(self, clientAddress, startingRoom):
         self.address = clientAddress
         self.alias = clientAdress
-        self.room = general
+        self.room = startingRoom
 
     def getAddress(self):
         return self.address
@@ -19,10 +19,10 @@ class ClientInfo:
         return self.room
 
     def setAlias(self, newAlias):
-        self.alias = newAlias # Is this how Python works?
+        self.alias = newAlias
 
     def setRoom(self, newRoom):
-        self.room = newRoom # I really hope this actually works
+        self.room = newRoom
 
 
 class Room:
@@ -117,14 +117,14 @@ class textHandler:
                 blockedUser.setRoom(general)
             print(blockingUser.getAlias() + " blocked " + blockedUser.getAlias() + " from " + room.getRoomName())
         else:
-            print("ERROR: " + blockingUser.getAlias() + " attempted to block " + blockedUser.getAlias() + " from " + room.getRoomName() " but is not the creator of the room")
+            print("ERROR: " + blockingUser.getAlias() + " attempted to block " + blockedUser.getAlias() + " from " + room.getRoomName() + " but is not the creator of the room")
 
     def unblockUser(self, unblockingUser, unblockedUser, room): #added the room parameter
         if unblockingUser == room.getCreator():
             room.unblockUser(unblockedUser)
             print(unblockingUser.getAlias() + " unblocked " + unblockedUser.getAlias() + " from " + room.getRoomName())
         else:
-            print("ERROR: " + unblockingUser.getAlias() + " attempted to unblock " + unblockedUser.getAlias() + " from " + room.getRoomName() " but is not the creator of the room")
+            print("ERROR: " + unblockingUser.getAlias() + " attempted to unblock " + unblockedUser.getAlias() + " from " + room.getRoomName() + " but is not the creator of the room")
 
     def createRoom(self, creatingUser, roomName):
         roomName = Room(roomName, creatingUser) #this does not feel right, how does python even work?
@@ -132,7 +132,7 @@ class textHandler:
 
     def deleteRoom(self, deletingUser, room): #changed from roomName to room as it will be the actual room object
         if deletingUser == room.getCreator():
-            print(deletingUser.getAlias() " deleted their room " + room.getRoomName() + ", moving all current users to general...")
+            print(deletingUser.getAlias() + " deleted their room " + room.getRoomName() + ", moving all current users to general...")
             for user in room.users:
                 self.joinChat(general, user) #this smells real bad as well, removing users from the list as you iterate over it and also just a weird nesting of calls
             del room
@@ -144,8 +144,10 @@ class textHandler:
         pass
 
 class RequestHandler:
-    ClientList
-    RoomList
+
+    def __init__(self, clientList, roomList):
+        self.listOfClients = clientList
+        self.listOfRooms = roomList
 
     def handleRequest(self):
         pass

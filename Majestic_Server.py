@@ -3,12 +3,11 @@ import thread
 import select
 
 class ClientInfo:
-    address
-    alias
-    room
 
     def __init__(self, clientAddress):
-
+        self.address = clientAddress
+        self.alias = clientAdress
+        self.room = general
 
     def getAddress(self):
         return self.address
@@ -21,24 +20,38 @@ class ClientInfo:
 
     def setAlias(self, newAlias):
         self.alias = newAlias # Is this how Python works?
-        pass
 
     def setRoom(self, newRoom):
         self.room = newRoom # I really hope this actually works
-        pass
 
 
 class Room:
-    users
-    blockedUsers
-    name
-    creator
 
     def __init__(self, roomName, roomCreator):
         self.name = roomName
         self.creator = roomCreator
+        self.users = [roomCreator]
+        self.blockedUsers = []
 
     def addUser(self, userAlias):
+        self.users.append(userAlias)
+        return userAlias
+
+    #we were missing this bad boy in the design docs
+    def removeUser(self, userAlias):
+        self.users.remove(userAlias)
+        return userAlias
+
+    #also this bad boy
+    def blockUser(self, userALias):
+        self.removeUser(userAlias)
+        self.blockedUsers.append(userAlias)
+        return userAlias
+
+    #oh and this guy
+    def unblockUser(self, userAlias):
+        self.blockedUsers.remove(userAlias)
+        return userAlias
 
     def getUsers(self):
         return users
@@ -54,23 +67,80 @@ class Room:
 
 
 class textHandler:
-    def interpretMessage(self):
-        pass
+    def interpretMessage(self, msg, user): #added message and user parameter
+        if msg.startswith("/"):
+            #message is a command
+            msgSplit = msg.split()
+            if msgSplit[0] == "/join":
+                self.joinChat(msgSplit[1], user) #just realized this passes in  a string and the function expects a room object, we will probably have to add a global list of rooms and users so we can check if the string passed is a valid user and then pass in that object
+
+            elif msgSplit[0] == "/leave":
+                self.joinChat(general, user)
+
+            elif msgSplit[0] == "/create":
+                self.createRoom(user, msgSplit[1])
+
+            elif msgSplit[0] == "/delete":
+                self.deleteRoom(user, msgSplit[1]) #same problem as above
+
+            elif msgSplit[0] == "/set_alias":
+                self.setAlias(msgSplit[1], user)
+
+            elif msgSplit[0] == "/block_user": #and again here
+                self.blockUser(user, msgSplit[1], msgSplit[2])
+
+            elif msgSplit[0] == "/unblock_user": #and here
+                self.unblockUser(user, msgSplit[1], msgSplit[2])
+
+            else:
+                halp()
+        else:
+            sendMessage(msg, user.getRoom())
+
     def sendMessage(self, msg, currRoom):
-        pass
+        pass #socket shit, send a standard message
+
     def joinChat(self, room, user):
-        pass
+        user.getRoom.removeUser(user)
+        room.addUser(user)
+        user.setRoom(room)
+        print(user.getAlias() + " joined " + room.getRoomName())
+
     def setAlias(self, newAlias, user):
-        pass
-    def blockUser(self, blockingUser, blockedUser):
-        pass
-    def unblockUser(self, unblockingUser, unblockedUser):
-        pass
+        print(user.getAlias() + " changed their alias to " + newAlias)
+        user.setAlias(newAlias) #do we want to add something to check for duplicate alias's?
+
+    def blockUser(self, blockingUser, blockedUser, room): #added the room parameter
+        if blockingUser == room.getCreator():
+            room.blockUser(blockedUser)
+            if blockedUser.getRoom() == room:
+                blockedUser.setRoom(general)
+            print(blockingUser.getAlias() + " blocked " + blockedUser.getAlias() + " from " + room.getRoomName())
+        else:
+            print("ERROR: " + blockingUser.getAlias() + " attempted to block " + blockedUser.getAlias() + " from " + room.getRoomName() " but is not the creator of the room")
+
+    def unblockUser(self, unblockingUser, unblockedUser, room): #added the room parameter
+        if unblockingUser == room.getCreator():
+            room.unblockUser(unblockedUser)
+            print(unblockingUser.getAlias() + " unblocked " + unblockedUser.getAlias() + " from " + room.getRoomName())
+        else:
+            print("ERROR: " + unblockingUser.getAlias() + " attempted to unblock " + unblockedUser.getAlias() + " from " + room.getRoomName() " but is not the creator of the room")
+
     def createRoom(self, creatingUser, roomName):
-        pass
-    def deleteRoom(self, deletingUser, roomName):
-        pass
+        roomName = Room(roomName, creatingUser) #this does not feel right, how does python even work?
+        return roomName
+
+    def deleteRoom(self, deletingUser, room): #changed from roomName to room as it will be the actual room object
+        if deletingUser == room.getCreator():
+            print(deletingUser.getAlias() " deleted their room " + room.getRoomName() + ", moving all current users to general...")
+            for user in room.users:
+                self.joinChat(general, user) #this smells real bad as well, removing users from the list as you iterate over it and also just a weird nesting of calls
+            del room
+        else:
+            print("ERROR: " + deletingUser.getAlias() + " attempted to delete the room " + room.getRoomName() + " but is not the creator of the room")
+
     def halp(self):
+        print("ya done fucked up")
         pass
 
 class RequestHandler:

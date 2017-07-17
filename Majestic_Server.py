@@ -5,8 +5,9 @@ import select
 class ClientInfo:
 
     def __init__(self, clientAddress, startingRoom):
+        print("New client added with address %s and room %s" % (clientAddress, startingRoom.getRoomName()))
         self.address = clientAddress
-        self.alias = clientAdress
+        self.alias = clientAddress
         self.room = startingRoom
 
     def getAddress(self):
@@ -54,16 +55,16 @@ class Room:
         return userAlias
 
     def getUsers(self):
-        return users
+        return self.users
 
     def getBlockedUsers(self):
-        return blockedUsers
+        return self.blockedUsers
 
     def getRoomName(self):
-        return name
+        return self.name
 
     def getCreator(self):
-        return creator
+        return self.creator
 
 
 class textHandler:
@@ -155,6 +156,7 @@ class RequestHandler:
 def add_users(soket_obj, user_list):
     while(1):
         client, addr = server_socket.accept()
+        new_client = ClientInfo([client, addr], generalRoom)
         print("Client '", addr[0], "' added on port ", addr[1])
         socket_list.append(client)
         client_list.append([client, addr])
@@ -169,6 +171,8 @@ server_socket.bind((host, port))
 server_socket.listen(5)
 socket_list = []
 client_list = []
+
+generalRoom = Room('general', 'default')
 
 thread.start_new_thread(add_users, (server_socket, socket_list))
 

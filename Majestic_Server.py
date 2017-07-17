@@ -165,13 +165,18 @@ class textHandler:
         pass
 
 class RequestHandler:
-
-    def __init__(self, clientList, roomList):
-        self.listOfClients = clientList
-        self.listOfRooms = roomList
-
     def handleRequest(self):
-        pass
+        while True:
+
+            sockets_with_sent_messages, empty, empty = select.select(socket_list, [], [], 0.1)
+
+            for existing_socket in sockets_with_sent_messages:
+                data = existing_socket.recv(1024)
+                if data:
+                    for robot in client_list:
+                        if robot.getSocketObj() == existing_socket:
+                            print('%s:%s says: %s' % (robot.getAddress()[0], robot.getAddress()[1], data))
+                            handleText.interpretMessage(data, robot, server_socket)
 
 def add_users(soket_obj, user_list):
     while(1):
@@ -196,26 +201,12 @@ client_list = []
 
 generalRoom = Room('general', None)
 
+room_list = [generalRoom]
+
 handleText = textHandler()
 
 thread.start_new_thread(add_users, (server_socket, socket_list))
 
-while True:
+requesting = RequestHandler()
 
-    sockets_with_sent_messages, empty, empty = select.select(socket_list, [], [], 0.1)
-
-    for existing_socket in sockets_with_sent_messages:
-        data = existing_socket.recv(1024)
-        if data:
-            for robot in client_list:
-                if robot.getSocketObj() == existing_socket:
-                    print('%s:%s says: %s' % (robot.getAddress()[0], robot.getAddress()[1], data))
-                    handleText.interpretMessage(data, robot, server_socket)
-
-        #except:
-        #    print "fuck y'all"
-        #    existing_socket.close()
-        #    socket_list.remove(existing_socket)
-        #    for robot in client_list:
-        #            if robot.getSocketObj() == existing_socket:
-        #                client_list.remove(robot)
+requesting.handleRequest()

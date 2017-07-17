@@ -1,17 +1,28 @@
 import socket
 import thread
 import select
+import string
 
 class ClientInfo:
 
-    def __init__(self, clientAddress, startingRoom):
-        print("New client added with address %s and room %s" % (clientAddress, startingRoom.getRoomName()))
-        self.address = clientAddress
-        self.alias = clientAddress
+    def __init__(self, clientSocketObj, address, startingRoom):
+
+        print("New client added with address %s:%s and room %s"
+        % (address[0], address[1], startingRoom.getRoomName()))
+
+        self.socket_obj = clientSocketObj
+        # address = (host, port)
+        self.address = address
+        self.alias = address[0] + ":" + str(address[1])
         self.room = startingRoom
+        self.room.addUser(self)
+        #print self.room.getUsers()
 
     def getAddress(self):
         return self.address
+
+    def getSocketObj(self):
+        return self.socket_obj
 
     def getAlias(self):
         return self.alias
@@ -31,7 +42,10 @@ class Room:
     def __init__(self, roomName, roomCreator):
         self.name = roomName
         self.creator = roomCreator
-        self.users = [roomCreator]
+        if roomCreator:
+            self.users = [roomCreator]
+        else:
+            self.users = []
         self.blockedUsers = []
 
     def addUser(self, userAlias):
@@ -68,7 +82,7 @@ class Room:
 
 
 class textHandler:
-    def interpretMessage(self, msg, user): #added message and user parameter
+    def interpretMessage(self, msg, user, serverSocket): #added message and user parameter
         if msg.startswith("/"):
             #message is a command
             msgSplit = msg.split()
@@ -96,10 +110,14 @@ class textHandler:
             else:
                 halp()
         else:
-            sendMessage(msg, user.getRoom())
+            self.sendMessage(msg, user.getRoom(), user, serverSocket)
 
-    def sendMessage(self, msg, currRoom):
-        pass #socket shit, send a standard message
+    def sendMessage(self, msg, currRoom, user, serverSocket):
+        destinationClients = currRoom.getUsers()
+        msg = user.getAlias() + ": " + msg
+        for robot in destinationClients and not user:
+            serverSocket.sendto(msg, robot.getAddress())
+            print msg
 
     def joinChat(self, room, user):
         user.getRoom.removeUser(user)
@@ -156,10 +174,10 @@ class RequestHandler:
 def add_users(soket_obj, user_list):
     while(1):
         client, addr = server_socket.accept()
-        new_client = ClientInfo([client, addr], generalRoom)
+        new_client = ClientInfo(client, addr, generalRoom)
         print("Client '", addr[0], "' added on port ", addr[1])
         socket_list.append(client)
-        client_list.append([client, addr])
+        client_list.append(new_client)
 
 '''~~~~~~~~~~~~~~~~~~~~~MAIN~~~~~~~~~~~~~~~~~~~~~'''
 server_socket = socket.socket()
@@ -169,28 +187,43 @@ port = 9999
 print('Starting Server...')
 server_socket.bind((host, port))
 server_socket.listen(5)
+# List of active socket objects, useful for the select.select() function
 socket_list = []
+#list of active clientInfo objects
 client_list = []
 
-generalRoom = Room('general', 'default')
+generalRoom = Room('general', None)
+
+handleText = textHandler()
 
 thread.start_new_thread(add_users, (server_socket, socket_list))
 
 while True:
 
-    clients_with_sent_messages, empty, emptier = select.select(socket_list, [], [], 0.1)
+    sockets_with_sent_messages, empty, empty = select.select(socket_list, [], [], 0.1)
 
-    for existing_client in clients_with_sent_messages:
+    for existing_socket in sockets_with_sent_messages:
         try:
-            data = existing_client.recv(1024)
+            data = existing_socket.recv(1024)
             if data:
-                for x in client_list:
-                    if x[0] == existing_client:
-                        print('%s:%s says: %s' % (x[1][0], x[1][1], data))
+                for robot in client_list:
+                    if robot.getSocketObj() == existing_socket:
+                        print('%s:%s says: %s' % (robot.getAddress()[0], robot.getAddress()[1], data))
+                        #handleText.interpretMessage(data, robot, server_socket)
+                        destinationClients = robot.room.getUsers()
+                        print destinationClients
+                        data = robot.getAlias() + ": " + data
+                        print data
+                        for shillbot in destinationClients:
+                            if shillbot == robot:
+                                continue
+                            print shillbot
+                            serverSocket.sendto(msg, shillbot.getAddress())
+                            print msg
 
         except:
-            existing_client.close()
-            socket_list.remove(existing_client)
-            for x in client_list:
-                    if x[0] == existing_client:
-                        client_list.remove(x)
+            existing_socket.close()
+            socket_list.remove(existing_socket)
+            for robot in client_list:
+                    if robot.getSocketObj() == existing_socket:
+                        client_list.remove(robot)

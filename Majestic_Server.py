@@ -42,10 +42,10 @@ class Room:
     def __init__(self, roomName, roomCreator):
         self.name = roomName
         self.creator = roomCreator
-        if roomCreator:
-            self.users = [roomCreator]
-        else:
-            self.users = []
+        #if roomCreator:
+            #self.users = [roomCreator]
+        #else:
+        self.users = []
         self.blockedUsers = []
 
     def addUser(self, userAlias):
@@ -54,11 +54,12 @@ class Room:
 
     #we were missing this bad boy in the design docs
     def removeUser(self, userAlias):
-        self.users.remove(userAlias)
+        if userAlias in self.users:
+            self.users.remove(userAlias)
         return userAlias
 
     #also this bad boy
-    def blockUser(self, userALias):
+    def blockUser(self, userAlias):
         self.removeUser(userAlias)
         self.blockedUsers.append(userAlias)
         return userAlias
@@ -93,7 +94,7 @@ class textHandler:
                         break
 
             elif msgSplit[0] == "/leave":
-                self.joinChat(general, user)
+                self.joinChat(generalRoom, user)
 
             elif msgSplit[0] == "/create":
                 self.createRoom(user, msgSplit[1])
@@ -101,7 +102,7 @@ class textHandler:
             elif msgSplit[0] == "/delete":
                 for room in room_list:
                     if room.getRoomName() == msgSplit[1]:
-                        self.deleteRoom(user, msgSplit[1])
+                        self.deleteRoom(user, room)
                         break
 
             elif msgSplit[0] == "/set_alias":
@@ -109,14 +110,14 @@ class textHandler:
 
             elif msgSplit[0] == "/block_user": #and again here
                 for robot in client_list:
-                    if robot.getAlias() == msgSplit[1]
-                        self.blockUser(user, msgSplit[1])
+                    if robot.getAlias() == msgSplit[1]:
+                        self.blockUser(user, robot)
                         break
 
             elif msgSplit[0] == "/unblock_user":
                 for robot in client_list:
-                    if robot.getAlias() == msgSplit[1]
-                        self.unblockUser(user, msgSplit[1])
+                    if robot.getAlias() == msgSplit[1]:
+                        self.unblockUser(user, robot, )
                         break
 
             else:
@@ -134,30 +135,38 @@ class textHandler:
 
 
     def joinChat(self, room, user):
-        user.getRoom.removeUser(user)
-        room.addUser(user)
-        user.setRoom(room)
-        print(user.getAlias() + " joined " + room.getRoomName())
+        if user not in room.blockedUsers:
+            user.getRoom().removeUser(user)
+            room.addUser(user)
+            user.setRoom(room)
+            print(user.getAlias() + " joined " + room.getRoomName())
+        else:
+            print ("User " + user.getAlias() + " attempted to join " + room.getRoomName() + " but is blocked the fuck out")
 
     def setAlias(self, newAlias, user):
+        for client in client_list:
+            if newAlias == client.getAlias():
+                print("The alias " + newAlias + " is taken by another user. Please choose another one.")
+                return
         print(user.getAlias() + " changed their alias to " + newAlias)
         user.setAlias(newAlias) #do we want to add something to check for duplicate alias's?
+
 
     def blockUser(self, blockingUser, blockedUser):
         if blockingUser == blockingUser.getRoom().getCreator():
             blockingUser.getRoom().blockUser(blockedUser)
-            if blockedUser.getRoom() == room:
-                blockedUser.setRoom(general)
-            print(blockingUser.getAlias() + " blocked " + blockedUser.getAlias() + " from " + room.getRoomName())
+            if blockedUser.getRoom() == blockingUser.getRoom():
+                blockedUser.setRoom(generalRoom)
+            print(blockingUser.getAlias() + " blocked " + blockedUser.getAlias() + " from " + blockingUser.getRoom().getRoomName())
         else:
-            print("ERROR: " + blockingUser.getAlias() + " attempted to block " + blockedUser.getAlias() + " from " + room.getRoomName() + " but is not the creator of the room")
+            print("ERROR: " + blockingUser.getAlias() + " attempted to block " + blockedUser.getAlias() + " from " + blockingUser.getRoom().getRoomName() + " but is not the creator of the room")
 
-    def unblockUser(self, unblockingUser, unblockedUser, room): #added the room parameter
-        if unblockingUser == room.getCreator():
-            room.unblockUser(unblockedUser)
-            print(unblockingUser.getAlias() + " unblocked " + unblockedUser.getAlias() + " from " + room.getRoomName())
+    def unblockUser(self, unblockingUser, unblockedUser): #added the room parameter
+        if unblockingUser == unblockingUser.getRoom().getCreator():
+            unblockingUser.getRoom().unblockUser(unblockedUser)
+            print(unblockingUser.getAlias() + " unblocked " + unblockedUser.getAlias() + " from " + unblockingUser.getRoom().getRoomName())
         else:
-            print("ERROR: " + unblockingUser.getAlias() + " attempted to unblock " + unblockedUser.getAlias() + " from " + room.getRoomName() + " but is not the creator of the room")
+            print("ERROR: " + unblockingUser.getAlias() + " attempted to unblock " + unblockedUser.getAlias() + " from " + unblockingUser.getRoom().getRoomName() + " but is not the creator of the room")
 
     def createRoom(self, creatingUser, roomName):
         roomName = Room(roomName, creatingUser) #this does not feel right, how does python even work?
@@ -170,7 +179,7 @@ class textHandler:
             print(deletingUser.getAlias() + " deleted their room " + room.getRoomName() + ", moving all current users to general...")
             room_list.remove(room)
             for user in room.users:
-                self.joinChat(general, user) #this smells real bad as well, removing users from the list as you iterate over it and also just a weird nesting of calls
+                self.joinChat(generalRoom, user) #this smells real bad as well, removing users from the list as you iterate over it and also just a weird nesting of calls
             del room
         else:
             print("ERROR: " + deletingUser.getAlias() + " attempted to delete the room " + room.getRoomName() + " but is not the creator of the room")
@@ -192,7 +201,7 @@ def add_users(soket_obj, user_list):
     while(1):
         client, addr = server_socket.accept()
         new_client = ClientInfo(client, addr, generalRoom)
-        print("Client '", addr[0], "' added on port ", addr[1])
+        print"Client ", addr[0], " added on port ", addr[1]
         socket_list.append(client)
         client_list.append(new_client)
 

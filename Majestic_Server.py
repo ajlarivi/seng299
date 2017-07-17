@@ -1,6 +1,7 @@
 import socket
 import thread
 import select
+import time
 
 class ClientInfo:
 
@@ -161,6 +162,8 @@ def add_users(soket_obj, user_list):
         socket_list.append(client)
         client_list.append([client, addr])
 
+
+
 '''~~~~~~~~~~~~~~~~~~~~~MAIN~~~~~~~~~~~~~~~~~~~~~'''
 server_socket = socket.socket()
 host = socket.gethostname()
@@ -178,19 +181,22 @@ thread.start_new_thread(add_users, (server_socket, socket_list))
 
 while True:
 
-    clients_with_sent_messages, empty, emptier = select.select(socket_list, [], [], 0.1)
-
-    for existing_client in clients_with_sent_messages:
+    for sockets in socket_list:
         try:
-            data = existing_client.recv(1024)
-            if data:
+            sockets.setblocking(0)
+            data = sockets.recv(1024)
+            sockets.setblocking(1)
+            if data > 0:
                 for x in client_list:
-                    if x[0] == existing_client:
+                    if x[0] == sockets:
                         print('%s:%s says: %s' % (x[1][0], x[1][1], data))
 
+        except socket.error:
+            pass
+            
         except:
-            existing_client.close()
-            socket_list.remove(existing_client)
+            sockets.close()
+            socket_list.remove(sockets)
             for x in client_list:
-                    if x[0] == existing_client:
+                    if x[0] == sockets:
                         client_list.remove(x)

@@ -87,7 +87,10 @@ class textHandler:
             #message is a command
             msgSplit = msg.split()
             if msgSplit[0] == "/join":
-                self.joinChat(msgSplit[1], user) #just realized this passes in  a string and the function expects a room object, we will probably have to add a global list of rooms and users so we can check if the string passed is a valid user and then pass in that object
+                for room in room_list:
+                    if room.getRoomName() == msgSplit[1]:
+                        self.joinChat(room, user)
+                        break
 
             elif msgSplit[0] == "/leave":
                 self.joinChat(general, user)
@@ -96,19 +99,28 @@ class textHandler:
                 self.createRoom(user, msgSplit[1])
 
             elif msgSplit[0] == "/delete":
-                self.deleteRoom(user, msgSplit[1]) #same problem as above
+                for room in room_list:
+                    if room.getRoomName() == msgSplit[1]:
+                        self.deleteRoom(user, msgSplit[1])
+                        break
 
             elif msgSplit[0] == "/set_alias":
                 self.setAlias(msgSplit[1], user)
 
             elif msgSplit[0] == "/block_user": #and again here
-                self.blockUser(user, msgSplit[1], msgSplit[2])
+                for robot in client_list:
+                    if robot.getAlias() == msgSplit[1]
+                        self.blockUser(user, msgSplit[1])
+                        break
 
-            elif msgSplit[0] == "/unblock_user": #and here
-                self.unblockUser(user, msgSplit[1], msgSplit[2])
+            elif msgSplit[0] == "/unblock_user":
+                for robot in client_list:
+                    if robot.getAlias() == msgSplit[1]
+                        self.unblockUser(user, msgSplit[1])
+                        break
 
             else:
-                halp()
+                self.halp()
         else:
             self.sendMessage(msg, user.getRoom(), user, serverSocket)
 
@@ -131,9 +143,9 @@ class textHandler:
         print(user.getAlias() + " changed their alias to " + newAlias)
         user.setAlias(newAlias) #do we want to add something to check for duplicate alias's?
 
-    def blockUser(self, blockingUser, blockedUser, room): #added the room parameter
-        if blockingUser == room.getCreator():
-            room.blockUser(blockedUser)
+    def blockUser(self, blockingUser, blockedUser):
+        if blockingUser == blockingUser.getRoom().getCreator():
+            blockingUser.getRoom().blockUser(blockedUser)
             if blockedUser.getRoom() == room:
                 blockedUser.setRoom(general)
             print(blockingUser.getAlias() + " blocked " + blockedUser.getAlias() + " from " + room.getRoomName())
@@ -149,11 +161,14 @@ class textHandler:
 
     def createRoom(self, creatingUser, roomName):
         roomName = Room(roomName, creatingUser) #this does not feel right, how does python even work?
+        room_list.append(roomName)
+        self.joinChat(roomName, creatingUser)
         return roomName
 
     def deleteRoom(self, deletingUser, room): #changed from roomName to room as it will be the actual room object
         if deletingUser == room.getCreator():
             print(deletingUser.getAlias() + " deleted their room " + room.getRoomName() + ", moving all current users to general...")
+            room_list.remove(room)
             for user in room.users:
                 self.joinChat(general, user) #this smells real bad as well, removing users from the list as you iterate over it and also just a weird nesting of calls
             del room
@@ -195,6 +210,8 @@ socket_list = []
 client_list = []
 
 generalRoom = Room('general', None)
+
+room_list = [generalRoom]
 
 handleText = textHandler()
 

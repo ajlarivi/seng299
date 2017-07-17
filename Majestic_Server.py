@@ -115,9 +115,11 @@ class textHandler:
     def sendMessage(self, msg, currRoom, user, serverSocket):
         destinationClients = currRoom.getUsers()
         msg = user.getAlias() + ": " + msg
-        for robot in destinationClients and not user:
-            serverSocket.sendto(msg, robot.getAddress())
-            print msg
+        for robot in destinationClients:
+            if robot == user:
+                continue
+            robot.getSocketObj().send(msg)
+
 
     def joinChat(self, room, user):
         user.getRoom.removeUser(user)
@@ -203,27 +205,17 @@ while True:
     sockets_with_sent_messages, empty, empty = select.select(socket_list, [], [], 0.1)
 
     for existing_socket in sockets_with_sent_messages:
-        try:
-            data = existing_socket.recv(1024)
-            if data:
-                for robot in client_list:
-                    if robot.getSocketObj() == existing_socket:
-                        print('%s:%s says: %s' % (robot.getAddress()[0], robot.getAddress()[1], data))
-                        #handleText.interpretMessage(data, robot, server_socket)
-                        destinationClients = robot.room.getUsers()
-                        print destinationClients
-                        data = robot.getAlias() + ": " + data
-                        print data
-                        for shillbot in destinationClients:
-                            if shillbot == robot:
-                                continue
-                            print shillbot
-                            serverSocket.sendto(msg, shillbot.getAddress())
-                            print msg
-
-        except:
-            existing_socket.close()
-            socket_list.remove(existing_socket)
+        data = existing_socket.recv(1024)
+        if data:
             for robot in client_list:
-                    if robot.getSocketObj() == existing_socket:
-                        client_list.remove(robot)
+                if robot.getSocketObj() == existing_socket:
+                    print('%s:%s says: %s' % (robot.getAddress()[0], robot.getAddress()[1], data))
+                    handleText.interpretMessage(data, robot, server_socket)
+
+        #except:
+        #    print "fuck y'all"
+        #    existing_socket.close()
+        #    socket_list.remove(existing_socket)
+        #    for robot in client_list:
+        #            if robot.getSocketObj() == existing_socket:
+        #                client_list.remove(robot)

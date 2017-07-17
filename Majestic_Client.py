@@ -1,15 +1,24 @@
+import sys
 import socket
+import thread
+import select
 
-s = socket.socket()
+clientSocket = socket.socket()
 host = socket.gethostname()
 port = 9999
 
 address = (host, port)
 
-s.connect(address)
-while(1):
-	msg = raw_input()
-	if len(msg) > 1024:
-		print("Error: Message too large")
-		continue
-	s.send(msg)
+clientSocket.connect(address)
+
+while (1):
+	readList = [sys.stdin, clientSocket]
+	sockets, empty1, empty2 = select.select(readList, [], [])
+	for sock in sockets:
+		if sock == clientSocket:
+			data = sock.recv(1024)
+			if data:
+				print(data)
+		else:
+			msg = raw_input()
+			clientSocket.send(msg)

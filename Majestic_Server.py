@@ -97,6 +97,9 @@ class textHandler:
                 self.joinChat(generalRoom, user)
 
             elif msgSplit[0] == "/create":
+                for room in room_list:
+                    if room.getRoomName() == msgSplit[1]:
+                        return
                 self.createRoom(user, msgSplit[1])
 
             elif msgSplit[0] == "/delete":

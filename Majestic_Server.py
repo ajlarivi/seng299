@@ -178,8 +178,8 @@ class textHandler:
         if deletingUser == room.getCreator():
             print(deletingUser.getAlias() + " deleted their room " + room.getRoomName() + ", moving all current users to general...")
             room_list.remove(room)
-            for user in room.users:
-                self.joinChat(generalRoom, user) #this smells real bad as well, removing users from the list as you iterate over it and also just a weird nesting of calls
+            while (len(room.users) != 0):
+                self.joinChat(generalRoom, room.users[0])
             del room
         else:
             print("ERROR: " + deletingUser.getAlias() + " attempted to delete the room " + room.getRoomName() + " but is not the creator of the room")

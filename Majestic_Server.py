@@ -294,11 +294,15 @@ class RequestHandler:
                             handleText.sendMessage(disconnectMsg, robot)
                             client_list.remove(robot)
 
+                if e.errno == 32:
+                    print("shitballs")
+
 def add_users(soket_obj, user_list):
     while(1):
         client, addr = server_socket.accept()
         new_client = ClientInfo(client, addr, generalRoom)
         print("New client added with address %s:%s and room %s" % (addr[0], addr[1], generalRoom.getRoomName()))
+        handleText.sendMessage("** joined room **", new_client)
         socket_list.append(client)
         client_list.append(new_client)
 

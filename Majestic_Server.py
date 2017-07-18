@@ -58,26 +58,26 @@ class Room:
         self.users = []
         self.blockedUsers = []
 
-    def addUser(self, userAlias):
-        self.users.append(userAlias)
-        return userAlias
+    def addUser(self, user):
+        self.users.append(user)
+        return user
 
     #we were missing this bad boy in the design docs
-    def removeUser(self, userAlias):
-        if userAlias in self.users:
-            self.users.remove(userAlias)
-        return userAlias
+    def removeUser(self, user):
+        if user in self.users:
+            self.users.remove(user)
+        return user
 
     #also this bad boy
-    def blockUser(self, userAlias):
-        self.removeUser(userAlias)
-        self.blockedUsers.append(userAlias)
-        return userAlias
+    def blockUser(self, user):
+        self.removeUser(user)
+        self.blockedUsers.append(user)
+        return user
 
     #oh and this guy
-    def unblockUser(self, userAlias):
-        self.blockedUsers.remove(userAlias)
-        return userAlias
+    def unblockUser(self, user):
+        self.blockedUsers.remove(user)
+        return user
 
     def getUsers(self):
         return self.users
@@ -171,6 +171,12 @@ class textHandler:
 
     def sendFeedback(self, msg, user):
         user.getSocketObj().send(msg)
+
+    def onDisconnect(self, msg, user):
+        clientsInRoom = user.getRoom().getUsers()
+        for client in clientsInRoom:
+            if client != user:
+                handleText.sendFeedback(msg, client)
 
     def sendMessage(self, msg, user):
         destinationClients = user.getRoom().getUsers()
@@ -333,56 +339,59 @@ class textHandler:
 
 class RequestHandler:
     def handleRequest(self):
-        while True:
 
-            sockets_with_sent_messages, empty, empty = select.select(socket_list, [], [], 0.1)
+        while True:
+            
             try:
+                sockets_with_sent_messages, empty, empty = select.select(socket_list, [], [], 0.1)
+
                 for existing_socket in sockets_with_sent_messages:
                     data = existing_socket.recv(1024)
+
                     if data:
                         for robot in client_list:
                             if robot.getSocketObj() == existing_socket:
                                 print('%s:%s says: %s' % (robot.getAddress()[0], robot.getAddress()[1], data))
                                 handleText.interpretMessage(data, robot)
 
-            except socket.error, e:
-                #readable, writable, error_sockets = select.select(socket_list, socket_list, [], 0.1)
-                #print("hello")
-                #for client in client_list:
-                #    if client.getSocketObj() not in writable:
-                #        print("world")
-                #        disconnectMsg = "** has disconnected **"
-                #        client.getSocketObj().shutdown(socket.SHUT_RDWR)
-                #        client.getSocketObj().close()
-                        #handleText.sendMessage(disconnectMsg, client)
-                #        socket_list.remove(client.getSocketObj())
-                #        client_list.remove(client)
+                    # When a client socket is unexpectedly shut down (keyboard interrupt)
+                    # it gets marked 'readable' so it gets appended into sockets_with_sent_messages.
+                    # However, nothing will be received from it, so if data will be false.
+                    # In this case, we can shut down the socket and remove it and its associated
+                    # user from any lists they may belong to.
+                    else:
+                        for robot in client_list:
+                            if robot.getSocketObj() == existing_socket:
+                                disconnectMsg = "** " +robot.getAlias() + " has disconnected. **"
+                                handleText.onDisconnect(disconnectMsg, robot)
+                                robot.getSocketObj().shutdown(socket.SHUT_WR)
+                                robot.getSocketObj().close()
+                                robot.getRoom().removeUser(robot)
+                                client_list.remove(robot)
+                                socket_list.remove(robot.getSocketObj())
 
-                if e.errno == 54:
-                    for robot in client_list:
-                        if robot.getSocketObj() == existing_socket:
-                            disconnectMsg = "** has disconnected **"
-                            handleText.sendMessage(disconnectMsg, robot)
-                            client_list.remove(robot)
-                            socket_list.remove(robot.getSocketObj())
+            except socket.error, e:
+                print("exception raised")
 
 def add_users(soket_obj, user_list):
     while(1):
         client, addr = server_socket.accept()
         new_client = ClientInfo(client, addr, generalRoom)
         print("New client added with address %s:%s and room %s" % (addr[0], addr[1], generalRoom.getRoomName()))
-        handleText.sendMessage("** joined room **", new_client)
+        handleText.onDisconnect(new_client.getAlias() + "** joined room **", new_client)
         socket_list.append(client)
         client_list.append(new_client)
 
 '''~~~~~~~~~~~~~~~~~~~~~MAIN~~~~~~~~~~~~~~~~~~~~~'''
 server_socket = socket.socket()
-host = ''#socket.gethostname()
+host = ''
 port = 9999
+address = (host, port)
 
 print('Starting Server...')
-server_socket.bind((host, port))
+server_socket.bind(address)
 server_socket.listen(5)
+
 # List of active socket objects, useful for the select.select() function
 socket_list = []
 #list of active clientInfo objects

@@ -2,6 +2,7 @@ import sys
 import socket
 import thread
 import select
+import getpass
 
 clientSocket = socket.socket()
 host = socket.gethostname()
@@ -20,5 +21,5 @@ while (1):
 			if data:
 				print(data)
 		else:
-			msg = raw_input()
+			msg = getpass.getpass("")
 			clientSocket.send(msg)

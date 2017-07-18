@@ -4,7 +4,7 @@ import thread
 import select
 
 clientSocket = socket.socket()
-host = socket.gethostname()
+host = ''#socket.gethostname()
 port = 9999
 
 address = (host, port)

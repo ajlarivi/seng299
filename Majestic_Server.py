@@ -111,7 +111,7 @@ class textHandler:
                             self.joinChat(room, user)
                             break
                     if not argValid:
-                        feedbackMsg = "that room does not exist"
+                        feedbackMsg = "That room does not exist."
                         self.sendFeedback(feedbackMsg, user)
 
                 elif msgSplit[0] == "/leave":
@@ -120,7 +120,7 @@ class textHandler:
                 elif msgSplit[0] == "/create":
                     for room in room_list:
                         if room.getRoomName() == msgSplit[1]:
-                            feedbackMsg = "The room " + room.getRoomName() + " already exists\n"
+                            feedbackMsg = "The room " + room.getRoomName() + " already exists"
                             self.sendFeedback(feedbackMsg, user)
                             return
                     self.createRoom(user, msgSplit[1])
@@ -193,7 +193,7 @@ class textHandler:
             self.sendMessage(roomMessage, user)
         else:
             print ("User " + str(user.getAddress()) + " attempted to join " + room.getRoomName() + " but is blocked.")
-            feedbackMsg = "You attempted to join the chatroom " + room.getRoomName() + " but you are blocked from this room.\n"
+            feedbackMsg = "You attempted to join the chatroom " + room.getRoomName() + " but you are blocked from this room."
             self.sendFeedback(feedbackMsg, user)
 
     def setAlias(self, newAlias, user):
@@ -215,9 +215,9 @@ class textHandler:
         if blockingUser == blockingUser.getRoom().getCreator():
             blockingUser.getRoom().blockUser(blockedUser)
             print(blockingUser.getAlias() + " blocked " + blockedUser.getAlias() + " from " + blockingUser.getRoom().getRoomName())
-            feedbackMsg = "You blocked " + blockedUser.getAlias() + " from your current room.\n"
+            feedbackMsg = "You blocked " + blockedUser.getAlias() + " from your current room."
             self.sendFeedback(feedbackMsg, blockingUser)
-            blockedMsg = blockingUser.getAlias() + " blocked you from the chatroom " + blockingUser.getRoom().getRoomName() + '\n'
+            blockedMsg = blockingUser.getAlias() + " blocked you from the chatroom " + blockingUser.getRoom().getRoomName()
             self.sendFeedback(blockedMsg, blockedUser)
             roomMessage = "** Blocked " + blockedUser.getAlias() + " from the room. **"
             self.sendMessage(roomMessage, blockingUser)
@@ -225,14 +225,14 @@ class textHandler:
                 self.joinChat(generalRoom, blockedUser)
         else:
             print("ERROR: " + blockingUser.getAlias() + " attempted to block " + blockedUser.getAlias() + " from " + blockingUser.getRoom().getRoomName() + " but is not the creator of the room")
-            feedbackMsg = "You cannot block someone unless you are the room creator.\n"
+            feedbackMsg = "You cannot block someone unless you are the room creator."
             self.sendFeedback(feedbackMsg, blockingUser)
 
     def unblockUser(self, unblockingUser, unblockedUser):
         if unblockingUser == unblockingUser.getRoom().getCreator():
             unblockingUser.getRoom().unblockUser(unblockedUser)
             print(unblockingUser.getAlias() + " unblocked " + unblockedUser.getAlias() + " from " + unblockingUser.getRoom().getRoomName())
-            feedbackMsg = "You unblocked " + unblockedUser.getAlias() + " from your current room.\n"
+            feedbackMsg = "You unblocked " + unblockedUser.getAlias() + " from your current room."
             self.sendFeedback(feedbackMsg, unblockingUser)
             unblockedMsg = unblockingUser.getAlias() + " unblocked you from the chatroom " + unblockingUser.getRoom().getRoomName() + '\n'
             self.sendFeedback(unblockedMsg, unblockedUser)
@@ -240,7 +240,7 @@ class textHandler:
             self.sendMessage(roomMessage, unblockingUser)
         else:
             print("ERROR: " + unblockingUser.getAlias() + " attempted to unblock " + unblockedUser.getAlias() + " from " + unblockingUser.getRoom().getRoomName() + " but is not the creator of the room")
-            feedbackMsg = "You cannot unblock someone unless you are the room creator.\n"
+            feedbackMsg = "You cannot unblock someone unless you are the room creator."
             self.sendFeedback(feedbackMsg, unblockingUser)
 
     def createRoom(self, creatingUser, roomName):
@@ -254,7 +254,7 @@ class textHandler:
     def deleteRoom(self, deletingUser, room):
         if deletingUser == room.getCreator():
             print(deletingUser.getAlias() + " deleted their room " + room.getRoomName() + ", moving all current users to general...")
-            feedbackMsg = "You deleted the chatroom " + deletingUser.getRoom().getRoomName() + '\n'
+            feedbackMsg = "You deleted the chatroom " + deletingUser.getRoom().getRoomName()
             self.sendFeedback(feedbackMsg, deletingUser)
             roomMessage = "** Deleted the chatroom " + deletingUser.getRoom().getRoomName() + " **"
             self.sendMessage(roomMessage, deletingUser)
@@ -264,7 +264,7 @@ class textHandler:
             del room
         else:
             print("ERROR: " + deletingUser.getAlias() + " attempted to delete the room " + room.getRoomName() + " but is not the creator of the room")
-            feedbackMsg = "You cannot delete a chatroom unless you are its creator.\n"
+            feedbackMsg = "You cannot delete a chatroom unless you are its creator."
             self.sendFeedback(feedbackMsg, deletingUser)
 
     def halp(self, user):
@@ -286,8 +286,13 @@ class RequestHandler:
                                 print('%s:%s says: %s' % (robot.getAddress()[0], robot.getAddress()[1], data))
                                 handleText.interpretMessage(data, robot)
 
-            except:
-                print("yo wtf")
+            except socket.error, e:
+                if e.errno == 54:
+                    for robot in client_list:
+                        if robot.getSocketObj() == existing_socket:
+                            disconnectMsg = "** has disconnected **"
+                            handleText.sendMessage(disconnectMsg, robot)
+                            client_list.remove(robot)
 
 def add_users(soket_obj, user_list):
     while(1):
@@ -299,8 +304,7 @@ def add_users(soket_obj, user_list):
 
 '''~~~~~~~~~~~~~~~~~~~~~MAIN~~~~~~~~~~~~~~~~~~~~~'''
 server_socket = socket.socket()
-host = socket.gethostname()
-print host
+host = ''#socket.gethostname()
 port = 9999
 
 print('Starting Server...')

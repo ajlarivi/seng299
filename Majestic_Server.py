@@ -191,7 +191,7 @@ class textHandler:
 
 class RequestHandler(Thread):
     def _init_(self):
-        Thread._init(self)
+        Thread._init_(self)
         t2.daemon = True
         t2.start()
 

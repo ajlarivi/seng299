@@ -13,7 +13,7 @@ helpMessage = '''List of Valid Commands:
 
 /delete [chatroom_name] - deletes the chatroom [chatroom_name] and moves all users to the general chatroom if you are the creator of this chatroom
 
-/set_alias [alias] - changes your alias displayed to other users
+/set_alias [alias] - changes your alias displayed to other users. Maximum 15 characters
 
 /block [user_alias] - blocks a user with the alias [user_alias] from the chatroom you are currently in if you are the creator of this chatroom
 
@@ -26,12 +26,10 @@ class ClientInfo:
     def __init__(self, clientSocketObj, address, startingRoom):
 
         self.socket_obj = clientSocketObj
-        # address = (host, port)
         self.address = address
         self.alias = address[0] + ":" + str(address[1])
         self.room = startingRoom
         self.room.addUser(self)
-        #print self.room.getUsers()
 
     def getAddress(self):
         return self.address
@@ -57,9 +55,6 @@ class Room:
     def __init__(self, roomName, roomCreator):
         self.name = roomName
         self.creator = roomCreator
-        #if roomCreator:
-            #self.users = [roomCreator]
-        #else:
         self.users = []
         self.blockedUsers = []
 
@@ -203,6 +198,10 @@ class textHandler:
                 feedbackMsg = "The alias " + newAlias + " is taken by another user. Please choose another one."
                 self.sendFeedback(feedbackMsg, user)
                 return
+        if len(newAlias) > 15:
+            feedbackMsg = "Specified alias exceeds 15 character limit. Please choose a shorter alias."
+            self.sendFeedback(feedbackMsg, user)
+            return
         print(user.getAlias() + " changed their alias to " + newAlias)
         feedbackMsg = "You changed your alias to " + newAlias
         self.sendFeedback(feedbackMsg, user)
@@ -254,9 +253,9 @@ class textHandler:
     def deleteRoom(self, deletingUser, room):
         if deletingUser == room.getCreator():
             print(deletingUser.getAlias() + " deleted their room " + room.getRoomName() + ", moving all current users to general...")
-            feedbackMsg = "You deleted the chatroom " + deletingUser.getRoom().getRoomName()
+            feedbackMsg = "You deleted the chatroom " + room.getRoomName()
             self.sendFeedback(feedbackMsg, deletingUser)
-            roomMessage = "** Deleted the chatroom " + room + " **"
+            roomMessage = "** Deleted the chatroom " + room.getRoomName() + " **"
             self.sendMessage(roomMessage, deletingUser)
             room_list.remove(room)
             while (len(room.users) != 0):

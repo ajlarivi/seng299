@@ -103,11 +103,16 @@ class textHandler:
             #message is a command
             msgSplit = msg.split()
             if len(msgSplit) == 2 or msgSplit[0] == "/leave":
+                argValid = False
                 if msgSplit[0] == "/join":
                     for room in room_list:
                         if room.getRoomName() == msgSplit[1]:
+                            argValid = True
                             self.joinChat(room, user)
                             break
+                    if not argValid:
+                        feedbackMsg = "that room does not exist"
+                        self.sendFeedback(feedbackMsg, user)
 
                 elif msgSplit[0] == "/leave":
                     self.joinChat(generalRoom, user)
@@ -123,8 +128,12 @@ class textHandler:
                 elif msgSplit[0] == "/delete":
                     for room in room_list:
                         if room.getRoomName() == msgSplit[1]:
+                            argValid = True
                             self.deleteRoom(user, room)
                             break
+                    if not argValid:
+                        feedbackMsg = "that room does not exist"
+                        self.sendFeedback(feedbackMsg, user)
 
                 elif msgSplit[0] == "/set_alias":
                     self.setAlias(msgSplit[1], user)
@@ -132,14 +141,22 @@ class textHandler:
                 elif msgSplit[0] == "/block": #and again here
                     for robot in client_list:
                         if robot.getAlias() == msgSplit[1]:
+                            argValid = True
                             self.blockUser(user, robot)
                             break
+                    if not argValid:
+                        feedbackMsg = "that alias is currently not in use"
+                        self.sendFeedback(feedbackMsg, user)
 
                 elif msgSplit[0] == "/unblock":
                     for robot in client_list:
                         if robot.getAlias() == msgSplit[1]:
+                            argValid = True
                             self.unblockUser(user, robot, )
                             break
+                    if not argValid:
+                        feedbackMsg = "that alias is currently not in use"
+                        self.sendFeedback(feedbackMsg, user)
 
                 else:
                     self.halp(user)
@@ -260,14 +277,17 @@ class RequestHandler:
         while True:
 
             sockets_with_sent_messages, empty, empty = select.select(socket_list, [], [], 0.1)
+            try:
+                for existing_socket in sockets_with_sent_messages:
+                    data = existing_socket.recv(1024)
+                    if data:
+                        for robot in client_list:
+                            if robot.getSocketObj() == existing_socket:
+                                print('%s:%s says: %s' % (robot.getAddress()[0], robot.getAddress()[1], data))
+                                handleText.interpretMessage(data, robot)
 
-            for existing_socket in sockets_with_sent_messages:
-                data = existing_socket.recv(1024)
-                if data:
-                    for robot in client_list:
-                        if robot.getSocketObj() == existing_socket:
-                            print('%s:%s says: %s' % (robot.getAddress()[0], robot.getAddress()[1], data))
-                            handleText.interpretMessage(data, robot)
+            except:
+                print("yo wtf")
 
 def add_users(soket_obj, user_list):
     while(1):
@@ -280,6 +300,7 @@ def add_users(soket_obj, user_list):
 '''~~~~~~~~~~~~~~~~~~~~~MAIN~~~~~~~~~~~~~~~~~~~~~'''
 server_socket = socket.socket()
 host = socket.gethostname()
+print host
 port = 9999
 
 print('Starting Server...')

@@ -256,7 +256,7 @@ class textHandler:
             print(deletingUser.getAlias() + " deleted their room " + room.getRoomName() + ", moving all current users to general...")
             feedbackMsg = "You deleted the chatroom " + deletingUser.getRoom().getRoomName() + '\n'
             self.sendFeedback(feedbackMsg, deletingUser)
-            roomMessage = "** Deleted the chatroom " + deletingUser.getRoom().getRoomName() + " **"
+            roomMessage = "** Deleted the chatroom " + room + " **"
             self.sendMessage(roomMessage, deletingUser)
             room_list.remove(room)
             while (len(room.users) != 0):

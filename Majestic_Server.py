@@ -1,11 +1,8 @@
 import socket
-import thread
+import threading
+from threading import Thread
 import select
-<<<<<<< HEAD
-import time
-=======
 import string
->>>>>>> master
 
 class ClientInfo:
 
@@ -192,12 +189,16 @@ class textHandler:
         print("ya done fucked up")
         pass
 
-class RequestHandler:
+class RequestHandler(Thread):
+    def _init_(self):
+        Thread._init(self)
+        t2.daemon = True
+        t2.start()
+
+
     def handleRequest(self):
         while True:
-
             sockets_with_sent_messages, empty, empty = select.select(socket_list, [], [], 0.1)
-
             for existing_socket in sockets_with_sent_messages:
                 data = existing_socket.recv(1024)
                 if data:
@@ -207,7 +208,7 @@ class RequestHandler:
                             handleText.interpretMessage(data, robot, server_socket)
 
 def add_users(soket_obj, user_list):
-    while(1):
+    while True:
         client, addr = server_socket.accept()
         new_client = ClientInfo(client, addr, generalRoom)
         print"Client ", addr[0], " added on port ", addr[1]
@@ -234,31 +235,14 @@ generalRoom = Room('general', None)
 room_list = [generalRoom]
 
 handleText = textHandler()
+t1=threading.Thread(target=add_users,args=(server_socket,socket_list,))
+t1.setDaemon(True)
+t1.start()
 
-<<<<<<< HEAD
-    for sockets in socket_list:
-        try:
-            sockets.setblocking(0)
-            data = sockets.recv(1024)
-            sockets.setblocking(1)
-            if data > 0:
-                for x in client_list:
-                    if x[0] == sockets:
-                        print('%s:%s says: %s' % (x[1][0], x[1][1], data))
-
-        except socket.error:
-            pass
-            
-        except:
-            sockets.close()
-            socket_list.remove(sockets)
-            for x in client_list:
-                    if x[0] == sockets:
-                        client_list.remove(x)
-=======
-thread.start_new_thread(add_users, (server_socket, socket_list))
-
-requesting = RequestHandler()
-
-requesting.handleRequest()
->>>>>>> master
+RequestHandler()
+while True:
+    pass
+#t2 = threading.Thread(target=requesting.handleRequest)
+#t2.setDaemon(True)
+#t2.start()
+#thread.start_new_thread(requesting.handleRequest, ())

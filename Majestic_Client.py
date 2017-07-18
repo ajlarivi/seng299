@@ -11,7 +11,7 @@ address = (host, port)
 
 clientSocket.connect(address)
 
-while (1):
+while True:
 	readList = [sys.stdin, clientSocket]
 	sockets, empty1, empty2 = select.select(readList, [], [])
 	for sock in sockets:

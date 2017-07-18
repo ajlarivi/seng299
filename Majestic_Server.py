@@ -211,7 +211,7 @@ class textHandler:
 
 
     def blockUser(self, blockingUser, blockedUser):
-        if blockingUser == blockingUser.getRoom().getCreator():
+        if blockingUser == blockingUser.getRoom().getCreator() and blockedUser not in blockingUser.getRoom().getBlockedUsers():
             blockingUser.getRoom().blockUser(blockedUser)
             print(blockingUser.getAlias() + " blocked " + blockedUser.getAlias() + " from " + blockingUser.getRoom().getRoomName())
             feedbackMsg = "You blocked " + blockedUser.getAlias() + " from your current room."
@@ -222,13 +222,17 @@ class textHandler:
             self.sendMessage(roomMessage, blockingUser)
             if blockedUser.getRoom() == blockingUser.getRoom():
                 self.joinChat(generalRoom, blockedUser)
-        else:
+            return
+        elif blockingUser != blockingUser.getRoom().getCreator():
             print("ERROR: " + blockingUser.getAlias() + " attempted to block " + blockedUser.getAlias() + " from " + blockingUser.getRoom().getRoomName() + " but is not the creator of the room")
             feedbackMsg = "You cannot block someone unless you are the room creator."
-            self.sendFeedback(feedbackMsg, blockingUser)
+        else:
+            print("ERROR: " + blockingUser.getAlias() + " attempted to block " + blockedUser.getAlias() + " from " + blockingUser.getRoom().getRoomName() + " but they have already been blocked")
+            feedbackMsg = "This user has already been blocked from this room."
+        self.sendFeedback(feedbackMsg, blockingUser)
 
     def unblockUser(self, unblockingUser, unblockedUser):
-        if unblockingUser == unblockingUser.getRoom().getCreator():
+        if unblockingUser == unblockingUser.getRoom().getCreator() and unblockedUser in unblockingUser.getRoom().getBlockedUsers(): # Don't worry about it
             unblockingUser.getRoom().unblockUser(unblockedUser)
             print(unblockingUser.getAlias() + " unblocked " + unblockedUser.getAlias() + " from " + unblockingUser.getRoom().getRoomName())
             feedbackMsg = "You unblocked " + unblockedUser.getAlias() + " from your current room."
@@ -237,10 +241,14 @@ class textHandler:
             self.sendFeedback(unblockedMsg, unblockedUser)
             roomMessage = "** Unblocked " + unblockedUser.getAlias() + " from the room. **"
             self.sendMessage(roomMessage, unblockingUser)
-        else:
+            return
+        elif unblockingUser != unblockingUser.getRoom().getCreator():
             print("ERROR: " + unblockingUser.getAlias() + " attempted to unblock " + unblockedUser.getAlias() + " from " + unblockingUser.getRoom().getRoomName() + " but is not the creator of the room")
             feedbackMsg = "You cannot unblock someone unless you are the room creator."
-            self.sendFeedback(feedbackMsg, unblockingUser)
+        else:
+            print("ERROR: " + unblockingUser.getAlias() + " attempted to unblock " + unblockedUser.getAlias() + " from " + unblockingUser.getRoom().getRoomName() + " but they were not blocked before")
+            feedbackMsg = "This user was not blocked from this room."
+        self.sendFeedback(feedbackMsg, unblockingUser)
 
     def createRoom(self, creatingUser, roomName):
         newRoom = Room(roomName, creatingUser)

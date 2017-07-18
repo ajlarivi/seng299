@@ -94,17 +94,21 @@ class Room:
 
 class textHandler:
     def interpretMessage(self, msg, user): #added message and user parameter
+
         if msg.startswith("/"):
             #message is a command
             msgSplit = msg.split()
+
             if len(msgSplit) == 2 or msgSplit[0] == "/leave":
                 argValid = False
+
                 if msgSplit[0] == "/join":
                     for room in room_list:
                         if room.getRoomName() == msgSplit[1]:
                             argValid = True
                             self.joinChat(room, user)
                             break
+
                     if not argValid:
                         feedbackMsg = "That room does not exist."
                         self.sendFeedback(feedbackMsg, user)
@@ -117,7 +121,9 @@ class textHandler:
                         if room.getRoomName() == msgSplit[1]:
                             feedbackMsg = "The room " + room.getRoomName() + " already exists"
                             self.sendFeedback(feedbackMsg, user)
+
                             return
+
                     self.createRoom(user, msgSplit[1])
 
                 elif msgSplit[0] == "/delete":
@@ -126,6 +132,7 @@ class textHandler:
                             argValid = True
                             self.deleteRoom(user, room)
                             break
+
                     if not argValid:
                         feedbackMsg = "that room does not exist"
                         self.sendFeedback(feedbackMsg, user)
@@ -139,6 +146,7 @@ class textHandler:
                             argValid = True
                             self.blockUser(user, robot)
                             break
+
                     if not argValid:
                         feedbackMsg = "that alias is currently not in use"
                         self.sendFeedback(feedbackMsg, user)
@@ -149,6 +157,7 @@ class textHandler:
                             argValid = True
                             self.unblockUser(user, robot, )
                             break
+
                     if not argValid:
                         feedbackMsg = "that alias is currently not in use"
                         self.sendFeedback(feedbackMsg, user)
@@ -166,9 +175,11 @@ class textHandler:
     def sendMessage(self, msg, user):
         destinationClients = user.getRoom().getUsers()
         msg = user.getAlias() + ": " + msg
+
         for robot in destinationClients:
             if robot == user:
                 continue
+
             robot.getSocketObj().send(msg)
 
 
@@ -194,7 +205,7 @@ class textHandler:
 
         else:
             print ("User " + str(user.getAddress()) + " attempted to join " + room.getRoomName() + " but is blocked.")
-            
+
             feedbackMsg = "You attempted to join the chatroom " + room.getRoomName() + " but you are blocked from this room."
             self.sendFeedback(feedbackMsg, user)
 

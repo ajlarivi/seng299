@@ -287,15 +287,25 @@ class RequestHandler:
                                 handleText.interpretMessage(data, robot)
 
             except socket.error, e:
+                #readable, writable, error_sockets = select.select(socket_list, socket_list, [], 0.1)
+                #print("hello")
+                #for client in client_list:
+                #    if client.getSocketObj() not in writable:
+                #        print("world")
+                #        disconnectMsg = "** has disconnected **"
+                #        client.getSocketObj().shutdown(socket.SHUT_RDWR)
+                #        client.getSocketObj().close()
+                        #handleText.sendMessage(disconnectMsg, client)
+                #        socket_list.remove(client.getSocketObj())
+                #        client_list.remove(client)
+
                 if e.errno == 54:
                     for robot in client_list:
                         if robot.getSocketObj() == existing_socket:
                             disconnectMsg = "** has disconnected **"
                             handleText.sendMessage(disconnectMsg, robot)
                             client_list.remove(robot)
-
-                if e.errno == 32:
-                    print("shitballs")
+                            socket_list.remove(robot.getSocketObj())
 
 def add_users(soket_obj, user_list):
     while(1):

@@ -176,18 +176,25 @@ class textHandler:
         if user not in room.blockedUsers:
             feedbackMsg = "You left " + user.getRoom().getRoomName()
             self.sendFeedback(feedbackMsg, user)
+
             roomMessage = "** Left the room. **"
             self.sendMessage(roomMessage, user)
+
             user.getRoom().removeUser(user)
             room.addUser(user)
             user.setRoom(room)
+
             print(user.getAlias() + " joined " + room.getRoomName())
+
             feedbackMsg = "You joined the chatroom " + room.getRoomName()
             self.sendFeedback(feedbackMsg, user)
+
             roomMessage = "** Joined the room **"
             self.sendMessage(roomMessage, user)
+
         else:
             print ("User " + str(user.getAddress()) + " attempted to join " + room.getRoomName() + " but is blocked.")
+            
             feedbackMsg = "You attempted to join the chatroom " + room.getRoomName() + " but you are blocked from this room."
             self.sendFeedback(feedbackMsg, user)
 
@@ -195,82 +202,116 @@ class textHandler:
         for client in client_list:
             if newAlias == client.getAlias():
                 print(user.getAddress(), " attempted to take the alias " + newAlias + " but it was taken by another user.")
+
                 feedbackMsg = "The alias " + newAlias + " is taken by another user. Please choose another one."
                 self.sendFeedback(feedbackMsg, user)
+
                 return
+
         if len(newAlias) > 15:
             feedbackMsg = "Specified alias exceeds 15 character limit. Please choose a shorter alias."
             self.sendFeedback(feedbackMsg, user)
+
             return
+
         print(user.getAlias() + " changed their alias to " + newAlias)
+
         feedbackMsg = "You changed your alias to " + newAlias
         self.sendFeedback(feedbackMsg, user)
+
         roomMessage = "** Changed alias to " + newAlias + " **"
         self.sendMessage(roomMessage, user)
+
         user.setAlias(newAlias)
 
 
     def blockUser(self, blockingUser, blockedUser):
         if blockingUser == blockingUser.getRoom().getCreator() and blockedUser not in blockingUser.getRoom().getBlockedUsers():
             blockingUser.getRoom().blockUser(blockedUser)
+
             print(blockingUser.getAlias() + " blocked " + blockedUser.getAlias() + " from " + blockingUser.getRoom().getRoomName())
+
             feedbackMsg = "You blocked " + blockedUser.getAlias() + " from your current room."
             self.sendFeedback(feedbackMsg, blockingUser)
+
             blockedMsg = blockingUser.getAlias() + " blocked you from the chatroom " + blockingUser.getRoom().getRoomName()
             self.sendFeedback(blockedMsg, blockedUser)
+
             roomMessage = "** Blocked " + blockedUser.getAlias() + " from the room. **"
             self.sendMessage(roomMessage, blockingUser)
+
             if blockedUser.getRoom() == blockingUser.getRoom():
                 self.joinChat(generalRoom, blockedUser)
             return
+
         elif blockingUser != blockingUser.getRoom().getCreator():
             print("ERROR: " + blockingUser.getAlias() + " attempted to block " + blockedUser.getAlias() + " from " + blockingUser.getRoom().getRoomName() + " but is not the creator of the room")
+
             feedbackMsg = "You cannot block someone unless you are the room creator."
+
         else:
             print("ERROR: " + blockingUser.getAlias() + " attempted to block " + blockedUser.getAlias() + " from " + blockingUser.getRoom().getRoomName() + " but they have already been blocked")
+
             feedbackMsg = "This user has already been blocked from this room."
+
         self.sendFeedback(feedbackMsg, blockingUser)
 
     def unblockUser(self, unblockingUser, unblockedUser):
         if unblockingUser == unblockingUser.getRoom().getCreator() and unblockedUser in unblockingUser.getRoom().getBlockedUsers(): # Don't worry about it
             unblockingUser.getRoom().unblockUser(unblockedUser)
             print(unblockingUser.getAlias() + " unblocked " + unblockedUser.getAlias() + " from " + unblockingUser.getRoom().getRoomName())
+
             feedbackMsg = "You unblocked " + unblockedUser.getAlias() + " from your current room."
             self.sendFeedback(feedbackMsg, unblockingUser)
+
             unblockedMsg = unblockingUser.getAlias() + " unblocked you from the chatroom " + unblockingUser.getRoom().getRoomName() + '\n'
             self.sendFeedback(unblockedMsg, unblockedUser)
+
             roomMessage = "** Unblocked " + unblockedUser.getAlias() + " from the room. **"
             self.sendMessage(roomMessage, unblockingUser)
+
             return
+
         elif unblockingUser != unblockingUser.getRoom().getCreator():
             print("ERROR: " + unblockingUser.getAlias() + " attempted to unblock " + unblockedUser.getAlias() + " from " + unblockingUser.getRoom().getRoomName() + " but is not the creator of the room")
+
             feedbackMsg = "You cannot unblock someone unless you are the room creator."
         else:
             print("ERROR: " + unblockingUser.getAlias() + " attempted to unblock " + unblockedUser.getAlias() + " from " + unblockingUser.getRoom().getRoomName() + " but they were not blocked before")
+
             feedbackMsg = "This user was not blocked from this room."
+
         self.sendFeedback(feedbackMsg, unblockingUser)
 
     def createRoom(self, creatingUser, roomName):
         newRoom = Room(roomName, creatingUser)
         room_list.append(newRoom)
+
         feedbackMsg = "You created the chatroom " + roomName
+
         self.sendFeedback(feedbackMsg, creatingUser)
         self.joinChat(newRoom, creatingUser)
+
         return newRoom
 
     def deleteRoom(self, deletingUser, room):
         if deletingUser == room.getCreator():
             print(deletingUser.getAlias() + " deleted their room " + room.getRoomName() + ", moving all current users to general...")
+
             feedbackMsg = "You deleted the chatroom " + room.getRoomName()
             self.sendFeedback(feedbackMsg, deletingUser)
+
             roomMessage = "** Deleted the chatroom " + room.getRoomName() + " **"
             self.sendMessage(roomMessage, deletingUser)
             room_list.remove(room)
+
             while (len(room.users) != 0):
                 self.joinChat(generalRoom, room.users[0])
             del room
+
         else:
             print("ERROR: " + deletingUser.getAlias() + " attempted to delete the room " + room.getRoomName() + " but is not the creator of the room")
+
             feedbackMsg = "You cannot delete a chatroom unless you are its creator."
             self.sendFeedback(feedbackMsg, deletingUser)
 

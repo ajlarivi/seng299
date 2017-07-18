@@ -189,23 +189,22 @@ class textHandler:
         print("ya done fucked up")
         pass
 
-class RequestHandler(Thread):
-    def _init_(self):
-        Thread._init_(self)
-        t2.daemon = True
-        t2.start()
+#class RequestHandler(Thread):
+#    def _init_(self):
+#        Thread._init_(self)
+#        t2.daemon = True
+#        t2.start()
 
-
-    def handleRequest(self):
-        while True:
-            sockets_with_sent_messages, empty, empty = select.select(socket_list, [], [], 0.1)
-            for existing_socket in sockets_with_sent_messages:
-                data = existing_socket.recv(1024)
-                if data:
-                    for robot in client_list:
-                        if robot.getSocketObj() == existing_socket:
-                            print('%s:%s says: %s' % (robot.getAddress()[0], robot.getAddress()[1], data))
-                            handleText.interpretMessage(data, robot, server_socket)
+def handleRequest(socket_list,client_list,handleText):
+    while True:
+        #sockets_with_sent_messages, empty, empty = select.select(socket_list, [], [], 0.1)
+        for existing_socket in socket_list:
+            data = existing_socket.recv(1024)
+            if data:
+                for robot in client_list:
+                    if robot.getSocketObj() == existing_socket:
+                        print('%s:%s says: %s' % (robot.getAddress()[0], robot.getAddress()[1], data))
+                        handleText.interpretMessage(data, robot, server_socket)
 
 def add_users(soket_obj, user_list):
     while True:
@@ -239,7 +238,10 @@ t1=threading.Thread(target=add_users,args=(server_socket,socket_list,))
 t1.setDaemon(True)
 t1.start()
 
-RequestHandler()
+t2=threading.Thread(target=handleRequest,args=(socket_list,client_list,handleText,))
+t2.setDaemon(True)
+t2.start()
+
 while True:
     pass
 #t2 = threading.Thread(target=requesting.handleRequest)

@@ -5,9 +5,9 @@ import string
 
 helpMessage = '''List of Valid Commands:
 
-/join [chatroom_name] - join the chatroom [chatroom_name]
+/join [chatroom_name] - joins the chatroom [chatroom_name]
 
-/leave [chatroom_name] - leave the chatroom [chatroom_name] and join the general chatroom
+/leave - leaves the current chatroom and join the general chatroom
 
 /create [chatroom_name] - creates a chatroom with the name [chatroom_name] and moves you to this room, you can block and unblock users from this room as well as delete the room
 
@@ -18,6 +18,8 @@ helpMessage = '''List of Valid Commands:
 /block [user_alias] - blocks a user with the alias [user_alias] from the chatroom you are currently in if you are the creator of this chatroom
 
 /unblock [user_alias] - unblocks a user with the alias [user_alias] from the chatroom you are currently in if you are the creator of this chatroom
+
+/rooms - displays a list of active rooms
 
 /help - displays this message\n'''
 
@@ -99,7 +101,7 @@ class textHandler:
             #message is a command
             msgSplit = msg.split()
 
-            if len(msgSplit) == 2 or msgSplit[0] == "/leave":
+            if len(msgSplit) == 2 or msgSplit[0] == "/leave" or msgSplit[0] == "/rooms":
                 argValid = False
 
                 if msgSplit[0] == "/join":
@@ -114,7 +116,11 @@ class textHandler:
                         self.sendFeedback(feedbackMsg, user)
 
                 elif msgSplit[0] == "/leave":
-                    self.joinChat(generalRoom, user)
+                    if user.getRoom() != generalRoom:
+                        self.joinChat(generalRoom, user)
+                    else:
+                        feedbackMsg = "You cannot leave the general chatroom, you can only leave other rooms."
+                        self.sendFeedback(feedbackMsg, user)
 
                 elif msgSplit[0] == "/create":
                     for room in room_list:
@@ -141,10 +147,10 @@ class textHandler:
                     self.setAlias(msgSplit[1], user)
 
                 elif msgSplit[0] == "/block": #and again here
-                    for robot in client_list:
-                        if robot.getAlias() == msgSplit[1]:
+                    for individual in client_list:
+                        if individual.getAlias() == msgSplit[1]:
                             argValid = True
-                            self.blockUser(user, robot)
+                            self.blockUser(user, individual)
                             break
 
                     if not argValid:
@@ -152,15 +158,22 @@ class textHandler:
                         self.sendFeedback(feedbackMsg, user)
 
                 elif msgSplit[0] == "/unblock":
-                    for robot in client_list:
-                        if robot.getAlias() == msgSplit[1]:
+                    for individual in client_list:
+                        if individual.getAlias() == msgSplit[1]:
                             argValid = True
-                            self.unblockUser(user, robot, )
+                            self.unblockUser(user, individual, )
                             break
 
                     if not argValid:
                         feedbackMsg = "that alias is currently not in use"
                         self.sendFeedback(feedbackMsg, user)
+
+                elif msgSplit[0] == "/rooms":
+                    feedbackMsg = "These are the active rooms: "
+                    for room in room_list:
+                        feedbackMsg = feedbackMsg + str(room.getRoomName()) + ", "
+                    feedbackMsg = feedbackMsg[:-2]
+                    self.sendFeedback(feedbackMsg, user)
 
                 else:
                     self.halp(user)
@@ -172,7 +185,7 @@ class textHandler:
     def sendFeedback(self, msg, user):
         user.getSocketObj().send(msg)
 
-    def onDisconnect(self, msg, user):
+    def notify(self, msg, user):
         clientsInRoom = user.getRoom().getUsers()
         for client in clientsInRoom:
             if client != user:
@@ -182,11 +195,11 @@ class textHandler:
         destinationClients = user.getRoom().getUsers()
         msg = user.getAlias() + ": " + msg
 
-        for robot in destinationClients:
-            if robot == user:
+        for individual in destinationClients:
+            if individual == user:
                 continue
 
-            robot.getSocketObj().send(msg)
+            individual.getSocketObj().send(msg)
 
 
     def joinChat(self, room, user):
@@ -338,52 +351,71 @@ class textHandler:
 
 
 class RequestHandler:
+
     def handleRequest(self):
 
-        while True:
-            
+        while 1:
+
             try:
+                # select.select() returns lists of readable, writeable, and error sockets
+                # when given lists of sockets. if a socket is 'readable', it means it has
+                # sent a message that is ready to be received
                 sockets_with_sent_messages, empty, empty = select.select(socket_list, [], [], 0.1)
 
+                # Iterate through the sockets that have sent messages and receive them
                 for existing_socket in sockets_with_sent_messages:
                     data = existing_socket.recv(1024)
 
+                    # If data is valid, figure out who it came from by matching the socket to its
+                    # corresponding clientInfo object and pass it along to the textHandler object
+                    # to be redistributed or executed in the case where it is a command
                     if data:
-                        for robot in client_list:
-                            if robot.getSocketObj() == existing_socket:
-                                print('%s:%s says: %s' % (robot.getAddress()[0], robot.getAddress()[1], data))
-                                handleText.interpretMessage(data, robot)
+                        for individual in client_list:
+                            if individual.getSocketObj() == existing_socket:
+                                print('%s:%s says: %s' % (individual.getAddress()[0], individual.getAddress()[1], data))
+                                handleText.interpretMessage(data, individual)
 
                     # When a client socket is unexpectedly shut down (keyboard interrupt)
                     # it gets marked 'readable' so it gets appended into sockets_with_sent_messages.
-                    # However, nothing will be received from it, so if data will be false.
+                    # However, nothing will be received from it, so 'if data' will evaluate to false.
                     # In this case, we can shut down the socket and remove it and its associated
                     # user from any lists they may belong to.
                     else:
-                        for robot in client_list:
-                            if robot.getSocketObj() == existing_socket:
-                                disconnectMsg = "** " +robot.getAlias() + " has disconnected. **"
-                                handleText.onDisconnect(disconnectMsg, robot)
-                                robot.getSocketObj().shutdown(socket.SHUT_WR)
-                                robot.getSocketObj().close()
-                                robot.getRoom().removeUser(robot)
-                                client_list.remove(robot)
-                                socket_list.remove(robot.getSocketObj())
+                        for individual in client_list:
+                            if individual.getSocketObj() == existing_socket:
+
+                                disconnectMsg = "** " +individual.getAlias() + " has disconnected. **"
+                                handleText.notify(disconnectMsg, individual)
+
+                                # shutdown and close the disconnected socket
+                                individual.getSocketObj().shutdown(socket.SHUT_WR)
+                                individual.getSocketObj().close()
+
+                                # remove the client and/or its associated socket from their room, client list, and socket list
+                                individual.getRoom().removeUser(individual)
+                                client_list.remove(individual)
+                                socket_list.remove(individual.getSocketObj())
 
             except socket.error, e:
                 print("exception raised")
 
-def add_users(soket_obj, user_list):
-    while(1):
-        client, addr = server_socket.accept()
-        new_client = ClientInfo(client, addr, generalRoom)
-        print("New client added with address %s:%s and room %s" % (addr[0], addr[1], generalRoom.getRoomName()))
-        handleText.onDisconnect(new_client.getAlias() + "** joined room **", new_client)
-        socket_list.append(client)
-        client_list.append(new_client)
+class connectionHandler:
+
+    def add_users(self, socketObj, socketList, clientList): # add text handler as optional argument, add socket list to args
+        while(1):
+            client, addr = socketObj.accept() # change to socket_obj.accept() after demo
+            new_client = ClientInfo(client, addr, generalRoom)
+            print("New client added with address %s:%s and room %s" % (addr[0], addr[1], generalRoom.getRoomName()))
+            handleText.notify(new_client.getAlias() + "** joined room **", new_client)
+            socketList.append(client)
+            clientList.append(new_client)
+
+    def connectionThread(self, serverSocket, socketList, clientList):
+        thread.start_new_thread(self.add_users, (serverSocket, socketList, clientList))
 
 '''~~~~~~~~~~~~~~~~~~~~~MAIN~~~~~~~~~~~~~~~~~~~~~'''
 server_socket = socket.socket()
+# setting host to '' sets it to the local machine
 host = ''
 port = 9999
 address = (host, port)
@@ -401,10 +433,12 @@ generalRoom = Room('general', None)
 
 room_list = [generalRoom]
 
+connecting = connectionHandler()
+
 handleText = textHandler()
 
-thread.start_new_thread(add_users, (server_socket, socket_list))
-
 requesting = RequestHandler()
+
+connecting.connectionThread(server_socket, socket_list, client_list)
 
 requesting.handleRequest()

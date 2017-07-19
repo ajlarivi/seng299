@@ -4,6 +4,7 @@ import thread
 import select
 
 clientSocket = socket.socket()
+# setting host to '' sets it to the local machine
 host = ''
 port = 9999
 

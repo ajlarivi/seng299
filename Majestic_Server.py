@@ -149,7 +149,7 @@ class textHandler:
 
                 elif msgSplit[0] == "/block": #and again here
                     for individual in client_list:
-                        if individual.getAlias() == msgSplit[1]:
+                        if individual.getAlias() == msgSplit[1] and individual != user:
                             argValid = True
                             self.blockUser(user, individual)
                             break

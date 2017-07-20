@@ -2,6 +2,7 @@ import socket
 import thread
 import select
 import string
+from time import sleep
 
 helpMessage = '''List of Valid Commands:
 
@@ -183,6 +184,7 @@ class textHandler:
             self.sendMessage(msg, user)
 
     def sendFeedback(self, msg, user):
+        sleep(0.01)
         user.getSocketObj().send(msg)
 
     def notify(self, msg, user):

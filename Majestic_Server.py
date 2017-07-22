@@ -148,14 +148,14 @@ class textHandler:
                     self.setAlias(msgSplit[1], user)
 
                 elif msgSplit[0] == "/block": #and again here
-                    for individual in client_list:
-                        if individual == user:
-                            argValid = True
-                            feedbackMsg = "You cannot block yourself."
-                            self.sendFeedback(feedbackMsg, user)
-                            break
+                    if user.getAlias() == msgSplit[1]:
+                        argValid = True
+                        feedbackMsg = "You cannot block yourself."
+                        self.sendFeedback(feedbackMsg, user)
+                        return
 
-                        elif individual.getAlias() == msgSplit[1]:
+                    for individual in client_list:
+                        if individual.getAlias() == msgSplit[1]:
                             argValid = True
                             self.blockUser(user, individual)
                             break

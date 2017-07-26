@@ -25,25 +25,27 @@ List of Valid Commands:
 
 /help - displays this message\n'''
 
-clientSocket = socket.socket()
-# setting host to '' sets it to the local machine
-host = ''
-port = 9999
+class client:
+    def __init__(self):
+        self.clientSocket = socket.socket()
+        self.host = ''
+        self.port = 9999
+        self.address = (self.host, self.port)
+        self.clientSocket.connect(self.address)
 
-address = (host, port)
+    def run(self):
+        print helpMessage
+        while (1):
+        	readList = [sys.stdin, self.clientSocket]
+        	sockets, empty1, empty2 = select.select(readList, [], [])
+        	for sock in sockets:
+        		if sock == self.clientSocket:
+        			data = sock.recv(1024)
+        			if data:
+        				print(data)
+        		else:
+        			msg = raw_input()
+        			self.clientSocket.send(msg)
 
-clientSocket.connect(address)
-
-print helpMessage
-
-while (1):
-	readList = [sys.stdin, clientSocket]
-	sockets, empty1, empty2 = select.select(readList, [], [])
-	for sock in sockets:
-		if sock == clientSocket:
-			data = sock.recv(1024)
-			if data:
-				print(data)
-		else:
-			msg = raw_input()
-			clientSocket.send(msg)
+clientObj = client()
+clientObj.run()

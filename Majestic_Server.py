@@ -65,19 +65,16 @@ class Room:
         self.users.append(user)
         return user
 
-    #we were missing this bad boy in the design docs
     def removeUser(self, user):
         if user in self.users:
             self.users.remove(user)
         return user
 
-    #also this bad boy
     def blockUser(self, user):
         self.removeUser(user)
         self.blockedUsers.append(user)
         return user
 
-    #oh and this guy
     def unblockUser(self, user):
         self.blockedUsers.remove(user)
         return user
@@ -96,7 +93,7 @@ class Room:
 
 
 class textHandler:
-    def interpretMessage(self, msg, user): #added message and user parameter
+    def interpretMessage(self, msg, user):
 
         if msg.startswith("/"):
             #message is a command
@@ -128,7 +125,6 @@ class textHandler:
                         if room.getRoomName() == msgSplit[1]:
                             feedbackMsg = "The room " + room.getRoomName() + " already exists"
                             self.sendFeedback(feedbackMsg, user)
-
                             return
 
                     self.createRoom(user, msgSplit[1])
@@ -147,7 +143,7 @@ class textHandler:
                 elif msgSplit[0] == "/set_alias":
                     self.setAlias(msgSplit[1], user)
 
-                elif msgSplit[0] == "/block": #and again here
+                elif msgSplit[0] == "/block":
                     if user.getAlias() == msgSplit[1]:
                         argValid = True
                         feedbackMsg = "You cannot block yourself."
@@ -182,14 +178,18 @@ class textHandler:
                     feedbackMsg = feedbackMsg[:-2]
                     self.sendFeedback(feedbackMsg, user)
 
+            #invoke help for invalid commands
                 else:
                     self.halp(user)
             else:
                 self.halp(user)
+
+            #not a command
         else:
             self.sendMessage(msg, user)
 
     def sendFeedback(self, msg, user):
+        #the sleep function prevents multiple messages from printing out on the same line
         sleep(0.01)
         user.getSocketObj().send(msg)
 
@@ -215,8 +215,8 @@ class textHandler:
             feedbackMsg = "You left " + user.getRoom().getRoomName()
             self.sendFeedback(feedbackMsg, user)
 
-            roomMessage = "** Left the room. **"
-            self.sendMessage(roomMessage, user)
+            roomMessage = "** " +user.getAlias() + " left the room. **"
+            self.notify(roomMessage, user)
 
             user.getRoom().removeUser(user)
             room.addUser(user)
@@ -227,8 +227,8 @@ class textHandler:
             feedbackMsg = "You joined the chatroom " + room.getRoomName()
             self.sendFeedback(feedbackMsg, user)
 
-            roomMessage = "** Joined the room **"
-            self.sendMessage(roomMessage, user)
+            roomMessage = "** " +user.getAlias() + " joined the room. **"
+            self.notify(roomMessage, user)
 
         else:
             print ("User " + str(user.getAddress()) + " attempted to join " + room.getRoomName() + " but is blocked.")
@@ -257,8 +257,8 @@ class textHandler:
         feedbackMsg = "You changed your alias to " + newAlias
         self.sendFeedback(feedbackMsg, user)
 
-        roomMessage = "** Changed alias to " + newAlias + " **"
-        self.sendMessage(roomMessage, user)
+        roomMessage = "** " + user.getAlias() + " changed alias to " + newAlias + " **"
+        self.notify(roomMessage, user)
 
         user.setAlias(newAlias)
 
@@ -275,8 +275,8 @@ class textHandler:
             blockedMsg = blockingUser.getAlias() + " blocked you from the chatroom " + blockingUser.getRoom().getRoomName()
             self.sendFeedback(blockedMsg, blockedUser)
 
-            roomMessage = "** Blocked " + blockedUser.getAlias() + " from the room. **"
-            self.sendMessage(roomMessage, blockingUser)
+            roomMessage = "** " + blockingUser.getAlias() + " blocked " + blockedUser.getAlias() + " from the room. **"
+            self.notify(roomMessage, blockingUser)
 
             if blockedUser.getRoom() == blockingUser.getRoom():
                 self.joinChat(generalRoom, blockedUser)
@@ -295,18 +295,18 @@ class textHandler:
         self.sendFeedback(feedbackMsg, blockingUser)
 
     def unblockUser(self, unblockingUser, unblockedUser):
-        if unblockingUser == unblockingUser.getRoom().getCreator() and unblockedUser in unblockingUser.getRoom().getBlockedUsers(): # Don't worry about it
+        if unblockingUser == unblockingUser.getRoom().getCreator() and unblockedUser in unblockingUser.getRoom().getBlockedUsers():
             unblockingUser.getRoom().unblockUser(unblockedUser)
             print(unblockingUser.getAlias() + " unblocked " + unblockedUser.getAlias() + " from " + unblockingUser.getRoom().getRoomName())
 
             feedbackMsg = "You unblocked " + unblockedUser.getAlias() + " from your current room."
             self.sendFeedback(feedbackMsg, unblockingUser)
 
-            unblockedMsg = unblockingUser.getAlias() + " unblocked you from the chatroom " + unblockingUser.getRoom().getRoomName() + '\n'
+            unblockedMsg = unblockingUser.getAlias() + " unblocked you from the chatroom " + unblockingUser.getRoom().getRoomName()
             self.sendFeedback(unblockedMsg, unblockedUser)
 
-            roomMessage = "** Unblocked " + unblockedUser.getAlias() + " from the room. **"
-            self.sendMessage(roomMessage, unblockingUser)
+            roomMessage = "** " + unblockingUser.getAlias() + " unblocked " + unblockedUser.getAlias() + " from the room. **"
+            self.notify(roomMessage, unblockingUser)
 
             return
 
@@ -339,8 +339,8 @@ class textHandler:
             feedbackMsg = "You deleted the chatroom " + room.getRoomName()
             self.sendFeedback(feedbackMsg, deletingUser)
 
-            roomMessage = "** Deleted the chatroom " + room.getRoomName() + " **"
-            self.sendMessage(roomMessage, deletingUser)
+            roomMessage = "** " + deletingUser.getAlias() + " deleted the chatroom " + room.getRoomName() + " **"
+            self.notify(roomMessage, deletingUser)
             room_list.remove(room)
 
             while (len(room.users) != 0):
@@ -364,57 +364,53 @@ class RequestHandler:
 
         while 1:
 
-            try:
-                # select.select() returns lists of readable, writeable, and error sockets
-                # when given lists of sockets. if a socket is 'readable', it means it has
-                # sent a message that is ready to be received
-                sockets_with_sent_messages, empty, empty = select.select(socket_list, [], [], 0.1)
+            # select.select() returns lists of readable, writeable, and error sockets
+            # when given lists of sockets. if a socket is 'readable', it means it has
+            # sent a message that is ready to be received
+            sockets_with_sent_messages, empty, empty = select.select(socket_list, [], [], 0.1)
 
-                # Iterate through the sockets that have sent messages and receive them
-                for existing_socket in sockets_with_sent_messages:
-                    data = existing_socket.recv(1024)
+            # Iterate through the sockets that have sent messages and receive them
+            for existing_socket in sockets_with_sent_messages:
+                data = existing_socket.recv(1024)
 
-                    # If data is valid, figure out who it came from by matching the socket to its
-                    # corresponding clientInfo object and pass it along to the textHandler object
-                    # to be redistributed or executed in the case where it is a command
-                    if data:
-                        for individual in client_list:
-                            if individual.getSocketObj() == existing_socket:
-                                print('%s:%s says: %s' % (individual.getAddress()[0], individual.getAddress()[1], data))
-                                handleText.interpretMessage(data, individual)
+                # If data is valid, figure out who it came from by matching the socket to its
+                # corresponding clientInfo object and pass it along to the textHandler object
+                # to be redistributed or executed in the case where it is a command
+                if data:
+                    for individual in client_list:
+                        if individual.getSocketObj() == existing_socket:
+                            print('%s:%s says: %s' % (individual.getAddress()[0], individual.getAddress()[1], data))
+                            handleText.interpretMessage(data, individual)
 
-                    # When a client socket is unexpectedly shut down (keyboard interrupt)
-                    # it gets marked 'readable' so it gets appended into sockets_with_sent_messages.
-                    # However, nothing will be received from it, so 'if data' will evaluate to false.
-                    # In this case, we can shut down the socket and remove it and its associated
-                    # user from any lists they may belong to.
-                    else:
-                        for individual in client_list:
-                            if individual.getSocketObj() == existing_socket:
+                # When a client socket is unexpectedly shut down (keyboard interrupt)
+                # it gets marked 'readable' so it gets appended into sockets_with_sent_messages.
+                # However, nothing will be received from it, so 'if data' will evaluate to false.
+                # In this case, we can shut down the socket and remove it and its associated
+                # user from any lists they may belong to.
+                else:
+                    for individual in client_list:
+                        if individual.getSocketObj() == existing_socket:
 
-                                disconnectMsg = "** " +individual.getAlias() + " has disconnected. **"
-                                handleText.notify(disconnectMsg, individual)
+                            disconnectMsg = "** " +individual.getAlias() + " has disconnected. **"
+                            handleText.notify(disconnectMsg, individual)
 
-                                # shutdown and close the disconnected socket
-                                individual.getSocketObj().shutdown(socket.SHUT_WR)
-                                individual.getSocketObj().close()
+                            # shutdown and close the disconnected socket
+                            individual.getSocketObj().shutdown(socket.SHUT_WR)
+                            individual.getSocketObj().close()
 
-                                # remove the client and/or its associated socket from their room, client list, and socket list
-                                individual.getRoom().removeUser(individual)
-                                client_list.remove(individual)
-                                socket_list.remove(individual.getSocketObj())
-
-            except socket.error, e:
-                print("exception raised")
+                            # remove the client and/or its associated socket from their room, client list, and socket list
+                            individual.getRoom().removeUser(individual)
+                            client_list.remove(individual)
+                            socket_list.remove(individual.getSocketObj())
 
 class connectionHandler:
 
-    def add_users(self, socketObj, socketList, clientList): # add text handler as optional argument, add socket list to args
+    def add_users(self, socketObj, socketList, clientList):
         while(1):
-            client, addr = socketObj.accept() # change to socket_obj.accept() after demo
+            client, addr = socketObj.accept()
             new_client = ClientInfo(client, addr, generalRoom)
             print("New client added with address %s:%s and room %s" % (addr[0], addr[1], generalRoom.getRoomName()))
-            handleText.notify(new_client.getAlias() + "** joined room **", new_client)
+            handleText.notify("** " + new_client.getAlias() + " joined room **", new_client)
             socketList.append(client)
             clientList.append(new_client)
 

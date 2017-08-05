@@ -180,9 +180,9 @@ class textHandler:
 
             #invoke help for invalid commands
                 else:
-                    self.halp(user)
+                    self.help(user)
             else:
-                self.halp(user)
+                self.help(user)
 
             #not a command
         else:
@@ -353,7 +353,7 @@ class textHandler:
             feedbackMsg = "You cannot delete a chatroom unless you are its creator."
             self.sendFeedback(feedbackMsg, deletingUser)
 
-    def halp(self, user):
+    def help(self, user):
         print("help called")
         self.sendFeedback(helpMessage, user)
 
